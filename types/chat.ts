@@ -2,10 +2,17 @@ import { OpenAIModel } from './openai';
 
 export interface Message {
   role: Role;
+  name: string;
   content: string;
+  function_call?: FunctionCall;
 }
 
-export type Role = 'assistant' | 'user';
+export interface FunctionCall {
+  name: string;
+  arguments: string;
+}
+
+export type Role = 'assistant' | 'user' | 'function';
 
 export interface ChatBody {
   model: OpenAIModel;
