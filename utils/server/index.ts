@@ -9,6 +9,9 @@ import {
   createParser,
 } from 'eventsource-parser';
 import { Result } from 'postcss';
+import { documentationOfSharedState } from '../shopifyRNDocumentation/documentationOfSharedState';
+import { documentationOfUseActions } from '../shopifyRNDocumentation/useActionsDocumentation';
+import {screenNavigationSetupDocumentation} from '../shopifyRNDocumentation/screenNavigationSetupDocumentation';
 
 export class OpenAIError extends Error {
   type: string;
@@ -42,6 +45,10 @@ async function search_for_polaris_component(query: String) {
   return responseJson;
 }
 
+function use_Actions_documentation() {
+  return documentationOfUseActions();
+}
+
 async function fetchOpenAIResponse(model: OpenAIModel,
   systemPrompt: string,
   temperature : number,
@@ -54,18 +61,45 @@ async function fetchOpenAIResponse(model: OpenAIModel,
 
     const functions = [
       {
-          "name": "search_for_polaris_component",
-          "description": "To build the UI, get the Polaris UI Component that corresponds to the given description",
+          "name": "documentation_for_searched_polaris_component",
+          "description": "search and provide the documentation of Polaris UI component you are looking for, if it exists",
           "parameters": {
               "type": "object",
               "properties": {
                   "description": {
                       "type": "string",
-                      "description": "The description or name of the Polaris UI component you are looking for.",
+                      "description": "The description of the Polaris UI component you are looking for. Try to give a good description, not only one word or two.",
                   },
               },
               "required": ["description"],
           },
+      },
+      {
+        "name": "use_Actions_documentation",
+        "description": "Documentation on how to use `useActions` hook",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+        }
+      },
+      {
+        "name": "shared_state_documentation",
+        "description": "Documentation on how to use `useSharedState` hook",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+        },
+      },
+      {
+        "name": "screen_navigation_setup_documentation",
+        "description": "Documentation on how to setup screen navigation",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+        },
       }
     ] ;
     const res = await fetch(url, {
@@ -92,7 +126,7 @@ async function fetchOpenAIResponse(model: OpenAIModel,
           ...messages,
         ],
         functions: functions,
-        max_tokens: 1000,
+        // max_tokens: 1000,
         temperature: temperature,
         stream: false,
       }),
@@ -135,36 +169,52 @@ export const OpenAIStream = async (
   // console.log("responseMessage", responseMessage);
   // Step 2: check if GPT wanted to call a function
   if (responseMessage.function_call) {
-    console.log("responseMessage.function_call", responseMessage.function_call);
+    console.log("👀 responseMessage.function_call", responseMessage);
     // Step 3: call the function
     // Note: the JSON response may not always be valid; be sure to handle errors
     const availableFunctions = {
-      search_for_polaris_component: search_for_polaris_component,
+      documentation_for_searched_polaris_component: search_for_polaris_component,
+      use_Actions_documentation: use_Actions_documentation,
+      shared_state_documentation: documentationOfSharedState,
+      screen_navigation_setup_documentation: screenNavigationSetupDocumentation
     };  // only one function in this example, but you can have multiple
     const functionName = responseMessage.function_call.name;
     const functionToCall = availableFunctions[functionName];
     const functionArgs = JSON.parse(responseMessage.function_call.arguments);
-    const functionResponse = await functionToCall(functionArgs.description);
-    // console.log("👀 functionResponse", functionResponse);
-
-    console.log("functionName", functionName);
     messages.push({
       role: responseMessage.role,
-      content: responseMessage.content,
+      content: "",
       name: responseMessage.name,
       function_call: {
         name: responseMessage.function_call.name,
         arguments: responseMessage.function_call.arguments
       },
-    });  // extend conversation with assistant's reply
-    // console.log("🚀 function Response", functionResponse);
-    // console.log("👀 function Response", functionResponse.componentContent);
+    });
+    if (functionName === "documentation_for_searched_polaris_component") {
+    const functionResponse = await functionToCall(functionArgs.description);
+    // console.log("👀 functionResponse", functionResponse);
+
+    console.log("functionName", functionName);
+    console.log("👀 function Response", functionResponse.componentContent);
     messages.push({
         "role": "function",
         "name": functionName,
         "content": functionResponse.componentContent,
     });
+  } else if ((functionName === "shared_state_documentation") ||
+  (functionName === "screen_navigation_setup_documentation") ||
+  (functionName === "use_Actions_documentation")) {
+    const functionResponse = await functionToCall();
+    // console.log("👀 functionResponse", functionResponse);
 
+    console.log("functionName", functionName);
+    console.log("👀 function Response", functionResponse);
+    messages.push({
+        "role": "function",
+        "name": functionName,
+        "content": functionResponse,
+    });
+  }
     // console.log("👀 messages sent", messages);
     const response = await OpenAIStream(model, systemPrompt, temperature, key, messages);
     return response;
