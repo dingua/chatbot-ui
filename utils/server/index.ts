@@ -12,6 +12,7 @@ import { Result } from 'postcss';
 import { documentationOfSharedState } from '../shopifyRNDocumentation/documentationOfSharedState';
 import { documentationOfUseActions } from '../shopifyRNDocumentation/useActionsDocumentation';
 import {screenNavigationSetupDocumentation} from '../shopifyRNDocumentation/screenNavigationSetupDocumentation';
+import { documentationForListWithSourceUsage } from '../shopifyRNDocumentation/documentationForListWithSourceUsage';
 
 export class OpenAIError extends Error {
   type: string;
@@ -100,6 +101,15 @@ async function fetchOpenAIResponse(model: OpenAIModel,
           "properties": {},
           "required": [],
         },
+      },
+      {
+        "name": "documentation_for_list_with_source_usage",
+        "description": "`ListWithSource` guide",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+        },
       }
     ] ;
     const res = await fetch(url, {
@@ -176,7 +186,8 @@ export const OpenAIStream = async (
       documentation_for_searched_polaris_component: search_for_polaris_component,
       use_Actions_documentation: use_Actions_documentation,
       shared_state_documentation: documentationOfSharedState,
-      screen_navigation_setup_documentation: screenNavigationSetupDocumentation
+      screen_navigation_setup_documentation: screenNavigationSetupDocumentation,
+      documentation_for_list_with_source_usage: documentationForListWithSourceUsage
     };  // only one function in this example, but you can have multiple
     const functionName = responseMessage.function_call.name;
     const functionToCall = availableFunctions[functionName];
@@ -203,7 +214,9 @@ export const OpenAIStream = async (
     });
   } else if ((functionName === "shared_state_documentation") ||
   (functionName === "screen_navigation_setup_documentation") ||
-  (functionName === "use_Actions_documentation")) {
+  (functionName === "use_Actions_documentation") ||
+  (functionName === "documentation_for_list_with_source_usage")) {
+    console.log("👀 calling: ", functionName);
     const functionResponse = await functionToCall();
     // console.log("👀 functionResponse", functionResponse);
 
