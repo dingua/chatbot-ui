@@ -70,6 +70,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
+      console.log("😎 handleSend");
       if (selectedConversation) {
         let updatedConversation: Conversation;
         if (deleteCount) {
@@ -157,17 +158,32 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               controller.abort();
               done = true;
               break;
+
             }
+            console.log("😎 reading");
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
-            const chunkValue = decoder.decode(value);
-            text += chunkValue;
+            console.log("😎 value = ", value);
+            if (value?.length === 0 || value === undefined) {
+              homeDispatch({ field: 'messageIsStreaming', value: false });
+              return;
+            }
+            console.log("😎 value= ", JSON.parse(decoder.decode(value)));
+            const updatedMessages: Message[] = value ? JSON.parse(decoder.decode(value)) : [];
+            if (!updatedMessages || updatedMessages.length === 0) {
+              return;
+            }
+            updatedMessages.forEach((message) => {
+              console.log("😎 message= ", message);
+            });
+            console.log("😎 updatedMessages= ", updatedMessages);
+            // text += chunkValue;
             if (isFirst) {
               isFirst = false;
-              const updatedMessages: Message[] = [
-                ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
-              ];
+              // const updatedMessages: Message[] = [
+              //   ...updatedConversation.messages,
+              //   { role: 'assistant', content: chunkValue },
+              // ];
               updatedConversation = {
                 ...updatedConversation,
                 messages: updatedMessages,
@@ -177,16 +193,16 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 value: updatedConversation,
               });
             } else {
-              const updatedMessages: Message[] =
-                updatedConversation.messages.map((message, index) => {
-                  if (index === updatedConversation.messages.length - 1) {
-                    return {
-                      ...message,
-                      content: text,
-                    };
-                  }
-                  return message;
-                });
+              // const updatedMessages: Message[] =
+              //   updatedConversation.messages.map((message, index) => {
+              //     if (index === updatedConversation.messages.length - 1) {
+              //       return {
+              //         ...message,
+              //         content: text,
+              //       };
+              //     }
+              //     return message;
+              //   });
               updatedConversation = {
                 ...updatedConversation,
                 messages: updatedMessages,
@@ -216,7 +232,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           const { answer } = await response.json();
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
+            { role: 'assistant', name: 'assistant', content: answer },
           ];
           updatedConversation = {
             ...updatedConversation,
@@ -245,13 +261,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         }
       }
     },
-    [
-      apiKey,
-      conversations,
-      pluginKeys,
-      selectedConversation,
-      stopConversationRef,
-    ],
+    [apiKey, conversations, homeDispatch, pluginKeys, selectedConversation, stopConversationRef],
   );
 
   const scrollToBottom = useCallback(() => {
@@ -462,8 +472,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     </div>
                   </div>
                 )}
-
-                {selectedConversation?.messages.map((message, index) => (
+                {console.log("😎 selectedConversation?.messages= ", selectedConversation?.messages)}
+                {selectedConversation?.messages.filter(message => {
+                  return (message.role === 'assistant' &&
+                  message.function_call === undefined &&
+                  message.content !== '')||
+                  (message.role === 'user' && message.content !== '')
+                }).map((message, index) => (
                   <MemoizedChatMessage
                     key={index}
                     message={message}

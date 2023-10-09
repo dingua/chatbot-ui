@@ -112,6 +112,7 @@ async function fetchOpenAIResponse(model: OpenAIModel,
         },
       }
     ] ;
+    // console.log("🔥 messages:\n", messages);
     const res = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -232,6 +233,12 @@ export const OpenAIStream = async (
     const response = await OpenAIStream(model, systemPrompt, temperature, key, messages);
     return response;
   }
-  console.log("responseMessage", responseMessage);
-  return responseMessage.content;
+  // console.log("responseMessage", responseMessage);
+  const updatedMessages: Message[] = [
+    ...messages,
+    // Add a name property to fix the error
+    { role: 'assistant', name: 'assistant', content: responseMessage.content },
+  ];
+  // console.log("👀 updatedMessages = ", JSON.stringify(updatedMessages));
+  return JSON.stringify(updatedMessages);
 };
