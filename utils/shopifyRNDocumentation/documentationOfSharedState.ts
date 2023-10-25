@@ -1,5 +1,4 @@
 export function documentationOfSharedState() {
-    console.log("documentationOfSharedState");
     const sharedStateText = `
 When multiple screens need to coordinate on a feature, they need a mechanism to access and update the shared state. To accomplish this goal, we have the SharedState library. It uses code from Shop's useSharedState hook, but modified to better suit our needs. In particular, we introduce the concept of the Repo, which is used to create and update shared state objects.
 

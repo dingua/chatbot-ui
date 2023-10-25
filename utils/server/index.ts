@@ -13,6 +13,7 @@ import { documentationOfSharedState } from '../shopifyRNDocumentation/documentat
 import { documentationOfUseActions } from '../shopifyRNDocumentation/useActionsDocumentation';
 import {screenNavigationSetupDocumentation} from '../shopifyRNDocumentation/screenNavigationSetupDocumentation';
 import { documentationForListWithSourceUsage } from '../shopifyRNDocumentation/documentationForListWithSourceUsage';
+import {documentationScreenFileStructure} from '../shopifyRNDocumentation/documentationScreenFileStructure';
 
 export class OpenAIError extends Error {
   type: string;
@@ -104,7 +105,16 @@ async function fetchOpenAIResponse(model: OpenAIModel,
       },
       {
         "name": "documentation_for_list_with_source_usage",
-        "description": "`ListWithSource` guide",
+        "description": "Documentation on how we implement lists",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+        },
+      },
+      {
+        "name": "documention_screen_file_structure",
+        "description": "Documentation on how to organize screen implementaiton's files",
         "parameters": {
           "type": "object",
           "properties": {},
@@ -112,6 +122,7 @@ async function fetchOpenAIResponse(model: OpenAIModel,
         },
       }
     ] ;
+    console.log("🥸 System prompt = ", systemPrompt);
     const res = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -187,7 +198,8 @@ export const OpenAIStream = async (
       use_Actions_documentation: use_Actions_documentation,
       shared_state_documentation: documentationOfSharedState,
       screen_navigation_setup_documentation: screenNavigationSetupDocumentation,
-      documentation_for_list_with_source_usage: documentationForListWithSourceUsage
+      documentation_for_list_with_source_usage: documentationForListWithSourceUsage,
+      documention_screen_file_structure: documentationScreenFileStructure,
     };  // only one function in this example, but you can have multiple
     const functionName = responseMessage.function_call.name;
     const functionToCall = availableFunctions[functionName];
@@ -203,10 +215,7 @@ export const OpenAIStream = async (
     });
     if (functionName === "documentation_for_searched_polaris_component") {
     const functionResponse = await functionToCall(functionArgs.description);
-    // console.log("👀 functionResponse", functionResponse);
 
-    console.log("functionName", functionName);
-    console.log("👀 function Response", functionResponse.componentContent);
     messages.push({
         "role": "function",
         "name": functionName,
@@ -218,10 +227,8 @@ export const OpenAIStream = async (
   (functionName === "documentation_for_list_with_source_usage")) {
     console.log("👀 calling: ", functionName);
     const functionResponse = await functionToCall();
-    // console.log("👀 functionResponse", functionResponse);
+    console.log("👀 functionResponse", functionResponse);
 
-    console.log("functionName", functionName);
-    console.log("👀 function Response", functionResponse);
     messages.push({
         "role": "function",
         "name": functionName,
